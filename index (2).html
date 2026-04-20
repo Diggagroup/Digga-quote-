@@ -1,112 +1,128 @@
-// ============================================================
-// DIGGA GROUP — SHARED CONFIG
-// Replace these values after setting up Airtable
-// ============================================================
-const AIRTABLE_API_KEY = 'patlKvHGDtaXPGzqB.233c1a4e5171390463744c9b15f5ce9ec644c8b00ac5fc0d606d3dfce716a3b0';  // paste from Airtable
-const AIRTABLE_BASE_ID = 'appILPYnmVRt5yAfh';            // paste from Airtable
-const BASE_URL = 'https://diggagroup.github.io/Digga-quote-'; // your GitHub Pages URL
+════════════════════════════════════════════════════════
+  DIGGA GROUP — LIVE QUOTE SYSTEM — SETUP GUIDE
+════════════════════════════════════════════════════════
 
-const AIRTABLE_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/Jobs`;
+WHAT'S IN THIS FOLDER
+──────────────────────
+admin/       → Admin form (takes phone calls, sends to estimator)
+estimator/   → Estimator form (opens on site via unique link)
+customer/    → Public quote request (put on your website)
+shared/      → Shared config — EDIT THIS FIRST
 
-// Field names matching your Airtable columns
-const FIELDS = {
-  jobId:        'Job ID',
-  status:       'Status',
-  address:      'Property Address',
-  contactName:  'Contact Name',
-  phone:        'Phone',
-  email:        'Email',
-  adminNotes:   'Admin Notes',
-  occupancy:    'Occupancy',
-  power:        'Power',
-  gas:          'Gas',
-  powerMeter:   'Power Meter',
-  gasMeter:     'Gas Meter',
-  vacancyDate:  'Vacancy Date',
-  demolition:   'Demolition Scope',
-  structure:    'Structure Type',
-  storeys:      'Storeys',
-  basement:     'Basement',
-  roof:         'Roof',
-  asbestos:     'Asbestos',
-  asbestosOther:'Asbestos Other',
-  walls:        'External Walls',
-  outbuildings: 'Outbuildings',
-  outbuildingsOther: 'Outbuildings Other',
-  outbuildingsM2: 'Outbuildings M2',
-  rubbish:      'Rubbish',
-  yard:         'Yard',
-  fences:       'Fences',
-  access:       'Access',
-  equipment:    'Equipment',
-  excavator:    'Excavator Size',
-  equipmentOther: 'Equipment Other',
-  height:       'Height',
-  safety:       'Safety',
-  permit:       'Permit Required',
-  protection:   'Protection Works',
-  boundaryRear: 'Boundary Rear',
-  boundaryFront:'Boundary Front',
-  boundaryLeft: 'Boundary Left',
-  boundaryRight:'Boundary Right',
-  itemsRetained:'Items Retained',
-  notes:        'Notes',
-  estimatorNotes:'Estimator Notes',
-  estimatorName: 'Estimator Name',
-  estimatedCost: 'Estimated Cost',
-  photos:       'Photos',  // stored as JSON string
-  createdAt:    'Created At',
-  updatedAt:    'Updated At',
-};
+─────────────────────────────────────────────────────────
+STEP 1 — CREATE YOUR AIRTABLE DATABASE (5 mins, free)
+─────────────────────────────────────────────────────────
+1. Go to airtable.com → sign up free
+2. Click "Create a base" → name it "Digga Jobs"
+3. Create a table called "Jobs"
+4. Add these fields (single line text unless noted):
+   - Job ID
+   - Status
+   - Property Address
+   - Contact Name
+   - Phone
+   - Email
+   - Admin Notes  (Long text)
+   - Occupancy
+   - Power
+   - Gas
+   - Power Meter
+   - Gas Meter
+   - Vacancy Date
+   - Demolition Scope
+   - Structure Type
+   - Storeys
+   - Basement
+   - Roof
+   - Asbestos
+   - Asbestos Other
+   - External Walls
+   - Outbuildings
+   - Outbuildings Other
+   - Outbuildings M2
+   - Rubbish
+   - Yard
+   - Fences
+   - Access
+   - Equipment
+   - Excavator Size
+   - Equipment Other
+   - Height
+   - Safety
+   - Permit Required
+   - Protection Works
+   - Boundary Rear
+   - Boundary Front
+   - Boundary Left
+   - Boundary Right
+   - Items Retained
+   - Notes          (Long text)
+   - Estimator Notes (Long text)
+   - Estimator Name
+   - Estimated Cost
+   - Created At
+   - Updated At
 
-// Generate unique job ID
-function generateJobId() {
-  const d = new Date();
-  const yr = d.getFullYear().toString().slice(2);
-  const mo = String(d.getMonth()+1).padStart(2,'0');
-  const day = String(d.getDate()).padStart(2,'0');
-  const rand = Math.random().toString(36).slice(2,6).toUpperCase();
-  return `DGG-${yr}${mo}${day}-${rand}`;
-}
+5. Get your API key:
+   → airtable.com/create/tokens → Create token
+   → Give it: data.records:read, data.records:write
+   → Scope it to your "Digga Jobs" base
+   → Copy the token
 
-// Save job to Airtable
-async function saveToAirtable(fields, recordId = null) {
-  const method = recordId ? 'PATCH' : 'POST';
-  const url = recordId ? `${AIRTABLE_URL}/${recordId}` : AIRTABLE_URL;
-  const resp = await fetch(url, {
-    method,
-    headers: {
-      'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ fields })
-  });
-  if (!resp.ok) throw new Error(`Airtable error: ${resp.status}`);
-  return resp.json();
-}
+6. Get your Base ID:
+   → Open your base → look at the URL:
+   airtable.com/appXXXXXXXXXXXXXX/...
+   The "appXXXXXXXXXXXXXX" part is your Base ID
 
-// Load job from Airtable by Job ID field
-async function loadJobByJobId(jobId) {
-  const url = `${AIRTABLE_URL}?filterByFormula=${encodeURIComponent(`{Job ID}="${jobId}"`)}`;
-  const resp = await fetch(url, {
-    headers: { 'Authorization': `Bearer ${AIRTABLE_API_KEY}` }
-  });
-  if (!resp.ok) throw new Error(`Airtable error: ${resp.status}`);
-  const data = await resp.json();
-  if (!data.records || data.records.length === 0) return null;
-  return data.records[0];
-}
+─────────────────────────────────────────────────────────
+STEP 2 — UPDATE shared/common.js
+─────────────────────────────────────────────────────────
+Open shared/common.js and replace:
 
-// Toast notification
-function showToast(msg, type='info') {
-  let t = document.getElementById('toast');
-  if (!t) { t = document.createElement('div'); t.id='toast'; document.body.appendChild(t); }
-  t.textContent = msg;
-  t.className = `toast toast-${type} show`;
-  setTimeout(() => t.classList.remove('show'), 3000);
-}
+  const AIRTABLE_API_KEY = 'YOUR_AIRTABLE_API_KEY';
+  → paste your token from Step 1
 
-// Get URL param
-function getParam(name) {
-  return new URLSearchParams(window.location.search).get(name);
-}
+  const AIRTABLE_BASE_ID = 'YOUR_BASE_ID';
+  → paste your Base ID from Step 1
+
+  const BASE_URL = 'https://diggagroup.github.io/Digga-quote';
+  → paste your actual GitHub Pages URL
+
+─────────────────────────────────────────────────────────
+STEP 3 — UPLOAD TO GITHUB PAGES
+─────────────────────────────────────────────────────────
+1. Go to your Digga-quote GitHub repo
+2. Upload ALL these folders/files (keeping folder structure)
+3. GitHub Pages will serve them at:
+   → Admin:     your-url/admin/
+   → Estimator: your-url/estimator/?job=JOB-ID
+   → Customer:  your-url/customer/
+
+─────────────────────────────────────────────────────────
+STEP 4 — SET UP AIRTABLE AUTOMATIONS (email/SMS alerts)
+─────────────────────────────────────────────────────────
+In Airtable → Automations → Create automation:
+
+AUTOMATION 1 — Alert admin when customer enquiry arrives:
+  Trigger: "When record is created" in Jobs table
+  Condition: Status = "Customer Enquiry"
+  Action: Send email to admin@digga.com.au
+  Subject: New Quote Request — {Property Address}
+  Body: Name: {Contact Name}, Phone: {Phone}, Job ID: {Job ID}
+
+AUTOMATION 2 — Estimator notification is handled by the
+  admin clicking "Share/SMS" button in the success modal.
+
+─────────────────────────────────────────────────────────
+YOUR 3 LINKS (bookmark these)
+─────────────────────────────────────────────────────────
+📞 Admin (phone calls):
+   your-url/admin/
+
+👷 Estimator (auto-generated per job, include ?job=DGG-XXXXX):
+   your-url/estimator/?job=DGG-XXXXX
+
+🌐 Customer (put on your website):
+   your-url/customer/
+
+════════════════════════════════════════════════════════
